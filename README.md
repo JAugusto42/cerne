@@ -8,7 +8,7 @@
 ## Features
 
 * **Multi-Language Support:** Auto-detects Go, Python, Ruby, and Node.js projects.
-* **⚡ High Performance:** Multi-threaded scanning with **local caching (24h)** for instant results on repeated runs.
+* **High Performance:** Multi-threaded scanning with **local caching (24h)** for instant results on repeated runs.
 * **Vulnerability Scanning:** Checks dependencies against the OSV database in real-time.
 * **Interactive TUI:** Built with [Textual](https://textual.textualize.io/), featuring mouse support and detailed modals.
 * **Vim-like Navigation:** Navigate the tree efficiently using `h`, `j`, `k`, `l`.
@@ -81,16 +81,16 @@ Cerne provides a clean, interactive way to explore dependency trees and spot sec
 
 Visualize your project structure. Use Vim keys (`h`, `j`, `k`, `l`) or the mouse to navigate, expand, and collapse nodes.
 
-|                                                                                                  Standard View                                                                                                   |                                                                                               Filtered View (Press `v`)                                                                                                |
-|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|
-| <img src="[https://github.com/user-attachments/assets/8011e027-0662-4673-9c3a-005b5d3cff53](https://github.com/user-attachments/assets/8011e027-0662-4673-9c3a-005b5d3cff53)" alt="Main Tree View" width="450"/> | <img src="[https://github.com/user-attachments/assets/8c226f13-3026-417c-986e-b1903c275ec9](https://github.com/user-attachments/assets/8c226f13-3026-417c-986e-b1903c275ec9)" alt="Vulnerable Only Mode" width="450"/> |
-|                                                                              *Clear overview of direct and indirect dependencies.*                                                                               |                                                                                     *Focus instantly on vulnerable packages only.*                                                                                     |
+|                                                         Standard View                                                         |                                                      Filtered View (Press `v`)                                                      |
+|:-----------------------------------------------------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------------------------------------------:|
+| <img src="https://github.com/user-attachments/assets/8011e027-0662-4673-9c3a-005b5d3cff53" alt="Main Tree View" width="450"/> | <img src="https://github.com/user-attachments/assets/8c226f13-3026-417c-986e-b1903c275ec9" alt="Vulnerable Only Mode" width="450"/> |
+|                                     *Clear overview of direct and indirect dependencies.*                                     |                                           *Focus instantly on vulnerable packages only.*                                            |
 
 ### Vulnerability Details
 
 Spot threats immediately (marked in red) and press **Enter** to inspect the CVE details, summaries, and references in a modal window.
 
 <div align="center">
-  <img src="[https://github.com/user-attachments/assets/68d4d5dd-944f-4c62-b45c-9c19dde56eb7](https://github.com/user-attachments/assets/68d4d5dd-944f-4c62-b45c-9c19dde56eb7)" alt="Vulnerability Details Modal" width="85%"/>
+  <img src="https://github.com/user-attachments/assets/68d4d5dd-944f-4c62-b45c-9c19dde56eb7" alt="Vulnerability Details Modal" width="85%"/>
   <p><em>Detailed security information provided by the OSV.dev database.</em></p>
 </div>
