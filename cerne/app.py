@@ -191,13 +191,13 @@ class CerneApp(App):
     def scan_project(self):
         try:
             logging.info("Worker Started.")
-            self.app.call_from_thread(self.update_status, "Detecting project...")
+            self.app.call_from_thread(self.update_status, "Finding dependency file ...")
 
             manager = detect_manager()
             if not manager:
-                logging.warning("Dependency file not found.")
+                logging.error("Dependency file not found.")
                 raise Exception(
-                    "Supported project not found..\n(go.mod, Gemfile.lock, package-lock.json, pyproject.toml, requirements.txt)")
+                    "Dependency file not found..\n(go.mod, Gemfile.lock, package-lock.json, pyproject.toml, requirements.txt)")
 
             logging.info(f"Dependency File: {manager.name}")
 
@@ -253,5 +253,5 @@ class CerneApp(App):
         tree.focus()
 
     def show_error(self, message):
-        self.query_one("#status-label").update(f"[bold red]Erro Fatal:[/]\n{message}")
+        self.query_one("#status-label").update(f"[bold red]Fatal Error:[/]\n{message}")
         self.query_one("LoadingIndicator").display = False
