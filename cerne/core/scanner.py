@@ -79,6 +79,7 @@ def process_batch(url, queries, names):
                 if vulns:
                     pkg_name = names[idx]
                     local_map[pkg_name] = vulns
+                    logging.debug(f"VULN FOUND for {pkg_name}: {len(vulns)} items. First ID: {vulns[0].get('id')}")
         else:
             logging.error(f"OSV API Error {response.status_code}: {response.text}")
 

@@ -1,4 +1,5 @@
 import logging
+from rich.markup import escape
 from textual.app import App, ComposeResult
 from textual.widgets import Header, Footer, Tree, Label, LoadingIndicator, Markdown, Button
 from textual.containers import Container, Vertical, VerticalScroll
@@ -8,6 +9,7 @@ from textual.binding import Binding
 
 from cerne.managers import detect_manager
 from cerne.core.scanner import check_vulnerabilities, enrich_tree
+from cerne.__version__ import __version__
 
 logging.basicConfig(
     filename="debug.log",
@@ -25,8 +27,8 @@ class VulnerabilityScreen(ModalScreen):
     }
     #dialog {
         padding: 1 2;
-        width: 85%;
-        height: 85%;
+        width: 90%;
+        height: 90%;
         border: thick $error;
         background: $surface;
     }
@@ -65,31 +67,42 @@ class VulnerabilityScreen(ModalScreen):
     def _generate_markdown(self):
         md = ""
         for v in self.vulns:
-            vid = v.get("id", "Unknow Vulnerability")
-            md += f"# 🔴 {vid}\n"
+            # 1. Header (ID)
+            vid = v.get("id", "Unknown Vulnerability")
+            md += f"# 🔴 {vid}\n\n"
 
             summary = v.get("summary", "")
             if not summary:
                 details_preview = v.get("details", "")[:100]
-                summary = f"Summary not available. ({details_preview}...)" if details_preview else "No Description."
+                summary = f"No summary available. ({details_preview}...)" if details_preview else "Description unavailable."
+
             md += f"**{summary}**\n\n"
 
             details = v.get("details", "")
             if details:
                 md += f"{details}\n\n"
             else:
-                md += "_No technical details._\n\n"
+                md += "_No technical details provided in the API response._\n\n"
 
-            references = v.get("references", [])
-            if references:
-                md += "### 🔗 References:\n"
-                for ref in references:
+            md += "### 🔗 References\n\n"
+
+            # Official OSV Link
+            if vid != "Unknown Vulnerability":
+                osv_url = f"https://osv.dev/vulnerability/{vid}"
+                md += f"- **OSV Database (Official)**: [{osv_url}]({osv_url})\n"
+
+            # Other API References
+            refs = v.get("references", [])
+            if refs:
+                for ref in refs:
                     url = ref.get("url", "#")
-                    ref_type = ref.get("type", "Link")
-                    md += f"- [{ref_type}]({url})\n"
+                    rtype = ref.get("type", "Link").replace("_", " ").title()
+                    if url != f"https://osv.dev/vulnerability/{vid}":
+                        md += f"- **{rtype}**: [{url}]({url})\n"
+
             md += "\n---\n"
 
-        if not md: md = "Information about vulnerability not found."
+        if not md: md = "No vulnerability data found."
         return md
 
     def on_button_pressed(self, event):
@@ -100,36 +113,41 @@ class VulnerabilityScreen(ModalScreen):
 
 
 class CerneApp(App):
-    show_only_vulnerable = False
-
+    TITLE = "Cerne"
+    SUB_TITLE = f"v {__version__}"
     CSS = """
     Tree { padding: 1; background: $surface; }
     #loading-container { height: 100%; align: center middle; }
     Label { margin-top: 1; color: $text-muted; }
+    .filter-active { background: $error; color: white; text-style: bold; }
     """
 
     BINDINGS = [
         Binding("q", "quit", "Quit"),
         Binding("j", "cursor_down", "Down"),
-        Binding("k", "cursor_up", "Up"),
+        Binding("k", "cursor_up", "Up", ),
         Binding("l", "expand_node", "Expand"),
         Binding("h", "collapse_node", "Collapse"),
         Binding("space", "toggle_node", "Toggle", show=True),
-        Binding("enter", "show_details", "Show Details", show=True),
-        Binding("v", "toggle_filter", "Only Vulnerable packages", show=True)
+        Binding("enter", "show_details", "Details", show=True),
+        Binding("v", "toggle_filter", "Vuln Only", show=True),
     ]
+
+    show_only_vulnerable = False
 
     def compose(self) -> ComposeResult:
         yield Header()
         with Container(id="loading-container"):
             yield LoadingIndicator()
             yield Label("Starting Cerne...", id="status-label")
-        yield Tree("Raiz", id="dep-tree")
+        yield Tree("Root", id="dep-tree")
         yield Footer()
 
     def on_mount(self):
         self.query_one("#dep-tree").display = False
         self.scan_project()
+
+    # --- ACTIONS ---
 
     def action_cursor_down(self):
         self.query_one("#dep-tree").action_cursor_down()
@@ -138,15 +156,10 @@ class CerneApp(App):
         self.query_one("#dep-tree").action_cursor_up()
 
     def action_expand_node(self):
-        """'l': Expande o nó atual."""
         tree = self.query_one("#dep-tree")
-        if tree.cursor_node:
-            tree.cursor_node.expand()
+        if tree.cursor_node: tree.cursor_node.expand()
 
     def action_collapse_node(self):
-        """
-        'h': if is collapsed, will close if is not the cursor will be moved to root.
-        """
         tree = self.query_one("#dep-tree")
         node = tree.cursor_node
         if node:
@@ -156,70 +169,62 @@ class CerneApp(App):
                 tree.select_node(node.parent)
                 node.parent.collapse()
 
-    def on_tree_node_selected(self, event: Tree.NodeSelected):
-        """Enter: To open details """
+    def on_tree_node_selected(self, event):
         node_data = event.node.data
         if node_data and node_data.vulnerable:
-            self.push_screen(VulnerabilityScreen(
-                node_data.name,
-                node_data.version,
-                node_data.vuln_details
-            ))
+            self.push_screen(VulnerabilityScreen(node_data.name, node_data.version, node_data.vuln_details))
         else:
-            self.notify("This package looks secure.", severity="information")
-
-    def update_progress(self, current, total):
-        self.app.call_from_thread(
-            self.update_status,
-            f"Analysing... ({current} of {total})"
-        )
+            self.notify("This package seems safe.", severity="information")
 
     def action_toggle_filter(self):
-        """ Toggles the filter to show only vulnerable packages """
         self.show_only_vulnerable = not self.show_only_vulnerable
-
         if self.show_only_vulnerable:
-            self.notify("Filter applied: Showing only vulnerable packages.", severity="warning")
+            self.notify("Filter enabled: Showing vulnerable packages only.", severity="warning")
         else:
-            self.notify("Filter removed: Showing all packages.", severity="information")
+            self.notify("Filter disabled: Showing all packages.", severity="information")
 
+        # Re-render tree using stored root data
         root_data = self.query_one("#dep-tree").root.data
-        if root_data:
-            self.render_tree(root_data)
+        if root_data: self.render_tree(root_data)
+
+    def has_vulnerable_descendant(self, node):
+        if node.vulnerable: return True
+        for child in node.children:
+            if self.has_vulnerable_descendant(child): return True
+        return False
+
+    # --- SCANNER & RENDER ---
+
+    def update_progress(self, current, total):
+        self.app.call_from_thread(self.update_status, f"Scanning security... (Batch {current} of {total})")
 
     @work(thread=True)
     def scan_project(self):
         try:
-            logging.info("Worker Started.")
-            self.app.call_from_thread(self.update_status, "Finding dependency file ...")
-
+            logging.info("Worker started.")
+            self.app.call_from_thread(self.update_status, "Detecting project...")
             manager = detect_manager()
-            if not manager:
-                logging.error("Dependency file not found.")
-                raise Exception(
-                    "Dependency file not found..\n(go.mod, Gemfile.lock, package-lock.json, pyproject.toml, requirements.txt)")
+            if not manager: raise Exception("No supported project found.")
 
-            logging.info(f"Dependency File: {manager.name}")
+            logging.info(f"Manager: {manager.name}")
 
-            self.app.call_from_thread(self.update_status, f"Reading dependencies ({manager.name})...")
+            self.app.call_from_thread(self.update_status, f"Parsing dependencies ({manager.name})...")
             root_node, packages = manager.get_dependencies()
 
             vulns = check_vulnerabilities(packages, ecosystem=manager.name, on_progress=self.update_progress)
 
-            self.app.call_from_thread(self.update_status, "Render tree...")
+            self.app.call_from_thread(self.update_status, "Rendering tree...")
             enrich_tree(root_node, vulns)
 
             self.app.call_from_thread(self.render_tree, root_node)
-
         except Exception as e:
-            logging.exception("Fatal Error on worker:")
+            logging.exception("Fatal error in worker:")
             self.app.call_from_thread(self.show_error, str(e))
 
     def update_status(self, msg):
         try:
             self.query_one("#status-label").update(msg)
-        except Exception as e:
-            logging.exception(f"Fail to update status {e}")
+        except:
             pass
 
     def render_tree(self, root_node):
@@ -231,20 +236,23 @@ class CerneApp(App):
 
         def add_nodes(tree_node, data_node):
             for child in data_node.children:
-                if self.show_only_vulnerable is True and child.vulnerable is False:
+                if self.show_only_vulnerable and not self.has_vulnerable_descendant(child):
                     continue
+
+                # Escape markup to prevent crashes with brackets in names
+                safe_name = escape(child.name)
+                safe_ver = escape(child.version)
+
                 if child.vulnerable:
-                    label = f"[bold red]⚠️ {child.name}[/] [dim]{child.version}[/] [red]({child.vuln_summary})[/]"
+                    safe_info = escape(child.vuln_summary)
+                    label = f"[bold red]⚠️ {safe_name}[/] [dim]{safe_ver}[/] [red]({safe_info})[/]"
                 elif not child.version:
-                    label = f"[blue]🔹 {child.name}[/]"
+                    label = f"[blue]🔹 {safe_name}[/]"
                 else:
-                    label = f"[green]✔[/] {child.name} [dim]{child.version}[/]"
+                    label = f"[green]✔[/] {safe_name} [dim]{safe_ver}[/]"
 
                 new_node = tree_node.add(label, expand=child.expanded, data=child)
-
-                if self.show_only_vulnerable:
-                    new_node.expand()
-
+                if self.show_only_vulnerable: new_node.expand()
                 add_nodes(new_node, child)
 
         add_nodes(tree.root, root_node)

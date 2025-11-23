@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cerne"
-version = "0.5.0"
+dynamic = ["version"]
 description = "A visualizer for dependency trees and vulnerabilities (SCA) in the terminal."
 readme = "README.md"
 authors = [
-  { name = "Seu Nome", email = "seu.email@exemplo.com" },
+  { name = "Jose Augusto", email = "joseaugusto.881@outlook.com" },
 ]
 license = { text = "MIT" }
 classifiers = [
@@ -18,7 +18,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Programming Language :: Python :: 3",
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 
 dependencies = [
     "textual>=0.40.0",
@@ -36,3 +36,6 @@ cerne = "cerne.__main__:main"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["cerne*"]
+
+[tool.setuptools.dynamic]
+version = {attr = "cerne.__version__.__version__"}
