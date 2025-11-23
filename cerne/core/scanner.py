@@ -4,13 +4,12 @@ import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
-def check_vulnerabilities(packages_dict, ecosystem="Go", on_progress=None):
+def check_vulnerabilities(packages_dict, ecosystem=None, on_progress=None):
     logging.info(f"Scanning {len(packages_dict)} packages...")
 
     url = "https://api.osv.dev/v1/querybatch"
     batch_size = 200
 
-    osv_ecosystem = ecosystem
     if ecosystem == "Go Modules":
         osv_ecosystem = "Go"
     elif ecosystem == "RubyGems":
@@ -19,6 +18,10 @@ def check_vulnerabilities(packages_dict, ecosystem="Go", on_progress=None):
         osv_ecosystem = "npm"
     elif ecosystem == "PyPI (Pip)":
         osv_ecosystem = "PyPI"
+    else:
+        text = f"Ecosystem: {ecosystem} not supported! Program exited."
+        logging.debug(text)
+        raise Exception(text)
 
     all_queries = []
     all_pkg_names = []
