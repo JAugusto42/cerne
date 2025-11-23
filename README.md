@@ -8,7 +8,7 @@
 ## Features
 
 * **Multi-Language Support:** Auto-detects Go, Python, Ruby, and Node.js projects.
-* **High Performance:** Multi-threaded scanning with **local caching (24h)** for instant results on repeated runs.
+* **High Performance:** Multi-threaded scanning with **local caching (1h)** for instant results on repeated runs.
 * **Vulnerability Scanning:** Checks dependencies against the OSV database in real-time.
 * **Interactive TUI:** Built with [Textual](https://textual.textualize.io/), featuring mouse support and detailed modals.
 * **Vim-like Navigation:** Navigate the tree efficiently using `h`, `j`, `k`, `l`.
