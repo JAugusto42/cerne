@@ -2,6 +2,11 @@
 .idea/
 cerne.egg-info/
 .python-version
+**pycache**
 
 # Files
 *.log
+
+# Cache
+__pycache__/
+*.py[cod]

@@ -100,6 +100,8 @@ class VulnerabilityScreen(ModalScreen):
 
 
 class CerneApp(App):
+    show_only_vulnerable = False
+
     CSS = """
     Tree { padding: 1; background: $surface; }
     #loading-container { height: 100%; align: center middle; }
@@ -114,6 +116,7 @@ class CerneApp(App):
         Binding("h", "collapse_node", "Collapse"),
         Binding("space", "toggle_node", "Toggle", show=True),
         Binding("enter", "show_details", "Show Details", show=True),
+        Binding("v", "toggle_filter", "Only Vulnerable packages", show=True)
     ]
 
     def compose(self) -> ComposeResult:
@@ -171,6 +174,19 @@ class CerneApp(App):
             f"Analysing... ({current} of {total})"
         )
 
+    def action_toggle_filter(self):
+        """ Toggles the filter to show only vulnerable packages """
+        self.show_only_vulnerable = not self.show_only_vulnerable
+
+        if self.show_only_vulnerable:
+            self.notify("Filter applied: Showing only vulnerable packages.", severity="warning")
+        else:
+            self.notify("Filter removed: Showing all packages.", severity="information")
+
+        root_data = self.query_one("#dep-tree").root.data
+        if root_data:
+            self.render_tree(root_data)
+
     @work(thread=True)
     def scan_project(self):
         try:
@@ -209,11 +225,14 @@ class CerneApp(App):
     def render_tree(self, root_node):
         tree = self.query_one("#dep-tree")
         tree.clear()
+        tree.root.data = root_node
         tree.root.label = f"📂 {root_node.name}"
         tree.root.expand()
 
         def add_nodes(tree_node, data_node):
             for child in data_node.children:
+                if self.show_only_vulnerable is True and child.vulnerable is False:
+                    continue
                 if child.vulnerable:
                     label = f"[bold red]⚠️ {child.name}[/] [dim]{child.version}[/] [red]({child.vuln_summary})[/]"
                 elif not child.version:
@@ -222,6 +241,10 @@ class CerneApp(App):
                     label = f"[green]✔[/] {child.name} [dim]{child.version}[/]"
 
                 new_node = tree_node.add(label, expand=child.expanded, data=child)
+
+                if self.show_only_vulnerable:
+                    new_node.expand()
+
                 add_nodes(new_node, child)
 
         add_nodes(tree.root, root_node)
