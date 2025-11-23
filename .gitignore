@@ -1,0 +1,7 @@
+# Environment
+.idea/
+cerne.egg-info/
+.python-version
+
+# Files
+*.log
