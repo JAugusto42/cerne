@@ -15,7 +15,6 @@ class GoManager(PackageManager):
         return ["go.mod"]
 
     def get_dependencies(self) -> Tuple[DependencyNode, Dict[str, str]]:
-        logging.debug("Iniciando leitura do Go Modules...")
         logging.debug("Starting reading Go Modules ...")
 
         try:

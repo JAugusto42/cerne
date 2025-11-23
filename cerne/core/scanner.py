@@ -1,8 +1,22 @@
 import requests
 import math
 import logging
+import requests_cache
+import os
+import tempfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+
+cache_dir = os.path.join(tempfile.gettempdir(), "cerne_cache_files")
+requests_cache.install_cache(
+    cache_name=cache_dir,
+    backend='filesystem',
+    expire_after=3600,  # 1 hour
+    allowable_methods=['GET', 'POST'],
+    backend_options={
+        'timeout': 30,
+    }
+)
 
 def check_vulnerabilities(packages_dict, ecosystem=None, on_progress=None):
     logging.info(f"Scanning {len(packages_dict)} packages...")
