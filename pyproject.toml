@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cerne"
-version = "0.1.0"
+version = "0.5.0"
 description = "A visualizer for dependency trees and vulnerabilities (SCA) in the terminal."
 readme = "README.md"
 authors = [

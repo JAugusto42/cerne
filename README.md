@@ -33,7 +33,20 @@ Requires Python 3.10+.
 pip install .
 ```
 
-# Or via wheel (if distributed)
+# Or via wheel (in github release page)
 ```bash
-pip install cerne-0.1.0-py3-none-any.whl
+pip install cerne-version-py3-none-any.whl
+```
+
+# For developers
+clone this repo
+```bash
+cd cerne
+pip install -e .
+```
+
+## Usage
+Enter the project folder and run:
+```bash
+cerne .
 ```
