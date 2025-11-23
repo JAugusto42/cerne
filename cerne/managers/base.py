@@ -1,27 +1,32 @@
 from abc import ABC, abstractmethod
-from typing import Tuple, Dict
+from typing import Tuple, Dict, List
 from cerne.core.model import DependencyNode
 
 class PackageManager(ABC):
-    """ Base class, all languages dependency files managers must inherit from it """
+    """Base class inherited by all language managers."""
 
     @property
     @abstractmethod
     def name(self) -> str:
-        """Friendly name of ecosystem, like: Go, Pypi, NPM """
+        """Friendly ecosystem name (e.g., Go, PyPI, NPM)."""
         pass
 
     @property
     @abstractmethod
-    def lock_files(self) -> list[str]:
-        """ Dependency files to identifier the project like go.mod, Gemfile.lock """
+    def lock_files(self) -> List[str]:
+        """List of exact filenames to check (legacy support)."""
         pass
+
+    def detect(self, files: List[str]) -> bool:
+        """
+        Returns True if this manager supports the current directory.
+        Default implementation checks for exact match in lock_files.
+        """
+        for lock_file in self.lock_files:
+            if lock_file in files:
+                return True
+        return False
 
     @abstractmethod
     def get_dependencies(self) -> Tuple[DependencyNode, Dict[str, str]]:
-        """
-        Returns:
-            1. Root of the tree
-            2. Dict for searching in osv database {package: version}
-        """
         pass
