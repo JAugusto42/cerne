@@ -339,14 +339,14 @@ class CerneApp(App):
 
                 if child.vulnerable:
                     safe_info = escape(child.vuln_summary)
-                    # ÍCONE SEGURO: (!) em amarelo/warning
+                    # (!) warning
                     label = f"[bold yellow](!) {safe_name}[/] [dim]{safe_ver}[/] [red]({safe_info})[/]"
                 elif not child.version:
-                    # ÍCONE SEGURO: (-) para locais
+                    # (-) for local dependency
                     label = f"[blue](-) {safe_name}[/]"
                 else:
-                    # ÍCONE SEGURO: (v) para ok
-                    label = f"[green](v) {safe_name} [dim]{safe_ver}[/]"
+                    # (•) ok
+                    label = f"[green](•) {safe_name} [dim]{safe_ver}[/]"
 
                 new_node = tree_node.add(label, expand=child.expanded, data=child)
                 if self.show_only_vulnerable:
