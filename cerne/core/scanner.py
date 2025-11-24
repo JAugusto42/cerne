@@ -1,48 +1,31 @@
 import requests
 import math
 import logging
-import requests_cache
-import os
-import tempfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
-cache_dir = os.path.join(tempfile.gettempdir(), "cerne_cache_files")
-requests_cache.install_cache(
-    cache_name=cache_dir,
-    backend='filesystem',
-    expire_after=3600,  # 1 hour
-    allowable_methods=['GET', 'POST'],
-    backend_options={
-        'timeout': 30,
-    }
-)
-
-def check_vulnerabilities(packages_dict, ecosystem=None, on_progress=None):
+def check_vulnerabilities(packages_dict, ecosystem="Go", on_progress=None):
+    """
+    Scans packages in batches using threads (No persistence cache for stability).
+    Returns: {pkg_name: [list_of_full_vuln_details]}
+    """
     logging.info(f"Scanning {len(packages_dict)} packages...")
 
     url = "https://api.osv.dev/v1/querybatch"
-    batch_size = 200
+    # Aumentei um pouco o batch pois sem cache de disco, a rede aguenta mais
+    BATCH_SIZE = 250
 
-    if ecosystem == "Go Modules":
-        osv_ecosystem = "Go"
-    elif ecosystem == "RubyGems":
-        osv_ecosystem = "RubyGems"
-    elif ecosystem in ["NPM", "NPM/Yarn"]:
-        osv_ecosystem = "npm"
-    elif ecosystem == "PyPI (Pip)":
-        osv_ecosystem = "PyPI"
-    else:
-        text = f"Ecosystem: {ecosystem} not supported! Program exited."
-        logging.debug(text)
-        raise Exception(text)
+    osv_ecosystem = ecosystem
+    if ecosystem == "Go Modules": osv_ecosystem = "Go"
+    if ecosystem == "RubyGems": osv_ecosystem = "RubyGems"
+    if ecosystem in ["NPM", "NPM/Yarn"]: osv_ecosystem = "npm"
+    if ecosystem == "PyPI (Pip)": osv_ecosystem = "PyPI"
 
     all_queries = []
     all_pkg_names = []
 
     for name, ver in packages_dict.items():
         clean_ver = ver.lstrip("v")
-
         all_queries.append({
             "package": {"name": name, "ecosystem": osv_ecosystem},
             "version": clean_ver
@@ -53,15 +36,17 @@ def check_vulnerabilities(packages_dict, ecosystem=None, on_progress=None):
     if total_pkgs == 0: return {}
 
     vuln_map = {}
-    num_batches = math.ceil(total_pkgs / batch_size)
+    num_batches = math.ceil(total_pkgs / BATCH_SIZE)
 
     batches_data = []
     for i in range(num_batches):
-        start = i * batch_size
-        end = start + batch_size
+        start = i * BATCH_SIZE
+        end = start + BATCH_SIZE
         batches_data.append((all_queries[start:end], all_pkg_names[start:end]))
 
-    with ThreadPoolExecutor(max_workers=5) as executor:
+    # ThreadPool Puro (Sem SQLite no meio para travar)
+    # Podemos usar mais workers agora que não tem gargalo de arquivo
+    with ThreadPoolExecutor(max_workers=10) as executor:
         future_to_batch = {
             executor.submit(process_batch, url, b_q, b_n): i
             for i, (b_q, b_n) in enumerate(batches_data)
@@ -72,6 +57,7 @@ def check_vulnerabilities(packages_dict, ecosystem=None, on_progress=None):
             try:
                 local_map = future.result()
                 vuln_map.update(local_map)
+
                 processed_count += 1
                 if on_progress:
                     on_progress(processed_count, num_batches)
@@ -83,24 +69,53 @@ def check_vulnerabilities(packages_dict, ecosystem=None, on_progress=None):
 
 def process_batch(url, queries, names):
     local_map = {}
+    # Sessão local por thread é mais segura e rápida
+    session = requests.Session()
+
     try:
-        response = requests.post(url, json={"queries": queries}, timeout=15)
+        response = session.post(url, json={"queries": queries}, timeout=45)
 
         if response.status_code == 200:
             results = response.json().get("results", [])
+
             for idx, res in enumerate(results):
                 vulns = res.get("vulns", [])
                 if vulns:
                     pkg_name = names[idx]
-                    local_map[pkg_name] = vulns
-                    logging.debug(f"VULN FOUND for {pkg_name}: {len(vulns)} items. First ID: {vulns[0].get('id')}")
+
+                    # Hydration Logic
+                    full_vulns = []
+                    for v in vulns:
+                        # Se faltar dados, busca detalhe
+                        if not v.get("summary") and not v.get("details"):
+                            full_data = _hydrate_vulnerability(session, v.get("id"))
+                            full_vulns.append(full_data if full_data else v)
+                        else:
+                            full_vulns.append(v)
+
+                    local_map[pkg_name] = full_vulns
         else:
             logging.error(f"OSV API Error {response.status_code}: {response.text}")
 
     except Exception as e:
-        logging.error(f"HTTP Error: {e}")
+        logging.error(f"HTTP Request Error: {e}")
         raise e
+    finally:
+        session.close()
+
     return local_map
+
+
+def _hydrate_vulnerability(session, vuln_id):
+    if not vuln_id: return None
+    try:
+        url = f"https://api.osv.dev/v1/vulns/{vuln_id}"
+        resp = session.get(url, timeout=15)
+        if resp.status_code == 200:
+            return resp.json()
+    except Exception as e:
+        logging.warning(f"Failed to hydrate {vuln_id}: {e}")
+    return None
 
 
 def enrich_tree(node, vuln_map):
@@ -113,7 +128,7 @@ def enrich_tree(node, vuln_map):
             first_id = node.vuln_details[0].get("id", "Unknown")
             node.vuln_summary = f"{count} vulns (e.g. {first_id})"
         else:
-            node.vuln_summary = "Vulnerable (No details)"
+            node.vuln_summary = "Vulnerable"
 
     for child in node.children:
         enrich_tree(child, vuln_map)

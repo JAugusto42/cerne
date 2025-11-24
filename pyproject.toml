@@ -23,8 +23,7 @@ requires-python = ">=3.10"
 dependencies = [
     "textual>=0.40.0",
     "requests>=2.32.5",
-    "tomli>=2.0.1; python_version < '3.11'",
-    "requests-cache>=1.2.0"
+    "tomli>=2.0.1; python_version < '3.11'"
 ]
 
 [project.optional-dependencies]
