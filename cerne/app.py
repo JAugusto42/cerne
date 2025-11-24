@@ -7,15 +7,7 @@ from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Horizontal, Vertical, VerticalScroll
 from textual.screen import ModalScreen
-from textual.widgets import (
-    Button,
-    Footer,
-    Header,
-    Label,
-    LoadingIndicator,
-    Markdown,
-    Tree,
-)
+from textual.widgets import Button, Footer, Header, Label, LoadingIndicator, Markdown, Tree
 
 from cerne.__version__ import __version__
 from cerne.core.scanner import check_vulnerabilities, enrich_tree
@@ -56,8 +48,7 @@ class VulnerabilityScreen(ModalScreen):
     #content-scroll {
         height: 1fr;
         margin: 1 0;
-        /* Garante que o conteudo nao quebre a borda lateral */
-        overflow-y: auto; 
+        overflow-y: auto;
         scrollbar-gutter: stable;
     }
     #close-btn {
@@ -73,15 +64,12 @@ class VulnerabilityScreen(ModalScreen):
         self.vulns = vulns
 
     def compose(self) -> ComposeResult:
-        # Ícone seguro [!] em vez de emoji
         yield Vertical(
             Label(f"[!] {self.pkg_name} v{self.pkg_ver}", id="title"),
-
             VerticalScroll(
                 Markdown(self._build_full_report()),
                 id="content-scroll"
             ),
-
             Button("Close (Esc)", variant="error", id="close-btn"),
             id="dialog",
         )
@@ -94,7 +82,6 @@ class VulnerabilityScreen(ModalScreen):
             summary = vuln.get("summary") or self._get_summary_fallback(vuln)
             details = vuln.get("details", "_No technical details provided._")
 
-            # Ícone seguro (X)
             md_output.append(f"# (X) {vid}\n")
             md_output.append(f"**{summary}**\n")
             md_output.append(f"{details}\n")
@@ -137,7 +124,6 @@ class CerneApp(App):
     DEFAULT_CSS = """
     Screen { layout: vertical; }
 
-    /* Info Bar */
     #info-bar {
         height: 3; 
         dock: top;
@@ -154,7 +140,6 @@ class CerneApp(App):
         color: $text;
     }
 
-    /* Tree Area */
     #tree-container { 
         height: 1fr; 
         border: none; 
@@ -162,7 +147,6 @@ class CerneApp(App):
     }
     Tree { padding: 1; background: $surface; }
 
-    /* Loading Area */
     #loading-container { height: 100%; align: center middle; }
 
     .filter-active { background: $error; color: white; text-style: bold; }
@@ -337,16 +321,20 @@ class CerneApp(App):
                 safe_name = escape(child.name)
                 safe_ver = escape(child.version)
 
+                # show the icon if dependency has child
+                child_count = len(child.children)
+                if child_count > 0:
+                    count_suffix = f" [dim]↳[/] {child_count}"
+                else:
+                    count_suffix = ""
+
                 if child.vulnerable:
                     safe_info = escape(child.vuln_summary)
-                    # (!) warning
-                    label = f"[bold yellow](!) {safe_name}[/] [dim]{safe_ver}[/] [red]({safe_info})[/]"
+                    label = f"[bold red](!) {safe_name}[/] [dim]{safe_ver}[/] [red]({safe_info})[/]{count_suffix}"
                 elif not child.version:
-                    # (-) for local dependency
-                    label = f"[blue](-) {safe_name}[/]"
+                    label = f"[blue](-) {safe_name}[/]{count_suffix}"
                 else:
-                    # (•) ok
-                    label = f"[green](•) {safe_name} [dim]{safe_ver}[/]"
+                    label = f"[green](•) {safe_name} [dim]{safe_ver}[/]{count_suffix}"
 
                 new_node = tree_node.add(label, expand=child.expanded, data=child)
                 if self.show_only_vulnerable:
