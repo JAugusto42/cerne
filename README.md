@@ -81,10 +81,10 @@ Cerne provides a clean, interactive way to explore dependency trees and spot sec
 
 Visualize your project structure. Use Vim keys (`h`, `j`, `k`, `l`) or the mouse to navigate, expand, and collapse nodes.
 
-|                                                         Standard View                                                         |                                                      Filtered View (Press `v`)                                                      |
-|:-----------------------------------------------------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------------------------------------------:|
-| <img width="1698" height="1038" alt="Image" src="https://github.com/user-attachments/assets/9be27975-e596-4b77-bcb4-28cf9856be1a" /> | <img src="https://github.com/user-attachments/assets/8c226f13-3026-417c-986e-b1903c275ec9" alt="Vulnerable Only Mode" width="450"/> |
-|                                     *Clear overview of direct and indirect dependencies.*                                     |                                           *Focus instantly on vulnerable packages only.*                                            |
+|                                                        Standard View                                                         |                                                      Filtered View (Press `v`)                                                      |
+|:----------------------------------------------------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------------------------------------------:|
+|    <img width="450" alt="Image" src="https://github.com/user-attachments/assets/9be27975-e596-4b77-bcb4-28cf9856be1a" />     | <img src="https://github.com/user-attachments/assets/8c226f13-3026-417c-986e-b1903c275ec9" alt="Vulnerable Only Mode" width="450"/> |
+|                                    *Clear overview of direct and indirect dependencies.*                                     |                                           *Focus instantly on vulnerable packages only.*                                            |
 
 ### Vulnerability Details
 
