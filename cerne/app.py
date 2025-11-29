@@ -289,7 +289,6 @@ class CerneApp(App):
             self.total_pkgs = len(packages)
             self.update_dashboard_ui()
 
-            # CORREÇÃO: Await na chamada async e chamadas diretas de UI
             vulns = await check_vulnerabilities(
                 packages,
                 ecosystem=manager.name,
