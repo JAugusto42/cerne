@@ -13,6 +13,7 @@ from cerne.__version__ import __version__
 from cerne.core.scanner import check_vulnerabilities, enrich_tree
 from cerne.managers import detect_manager
 
+# Log Configuration
 logging.basicConfig(
     filename="debug.log",
     level=logging.DEBUG,
@@ -247,10 +248,8 @@ class CerneApp(App):
         return False
 
     def update_progress(self, current: int, total: int) -> None:
-        self.app.call_from_thread(
-            self.update_status,
-            f"Scanning security... (Batch {current} of {total})"
-        )
+        # CORREÇÃO: Chamada direta, pois estamos no loop principal (async)
+        self.update_status(f"Scanning security... (Batch {current} of {total})")
 
     def update_status(self, msg: str) -> None:
         try:
@@ -269,42 +268,44 @@ class CerneApp(App):
         self.query_one("#status-label").update(f"[bold red]Fatal Error:[/]\n{message}")
         self.query_one("LoadingIndicator").display = False
 
-    @work(thread=True)
-    def scan_project(self) -> None:
+    # CORREÇÃO: Worker Async rodando na thread principal
+    @work(thread=False)
+    async def scan_project(self) -> None:
         try:
             logging.info("Worker started.")
-            self.app.call_from_thread(self.update_status, "Detecting project...")
+            self.update_status("Detecting project...")
 
             manager = detect_manager()
             if not manager:
                 raise Exception("No supported project found.")
 
             self.manager_name = manager.name
-            self.app.call_from_thread(self.update_dashboard_ui)
+            self.update_dashboard_ui()
 
             logging.info(f"Manager: {manager.name}")
-            self.app.call_from_thread(self.update_status, f"Parsing dependencies ({manager.name})...")
+            self.update_status(f"Parsing dependencies ({manager.name})...")
 
             root_node, packages = manager.get_dependencies()
             self.total_pkgs = len(packages)
-            self.app.call_from_thread(self.update_dashboard_ui)
+            self.update_dashboard_ui()
 
-            vulns = check_vulnerabilities(
+            # CORREÇÃO: Await na chamada async e chamadas diretas de UI
+            vulns = await check_vulnerabilities(
                 packages,
                 ecosystem=manager.name,
                 on_progress=self.update_progress
             )
 
-            self.app.call_from_thread(self.update_status, "Rendering tree...")
+            self.update_status("Rendering tree...")
             enrich_tree(root_node, vulns)
             self.vuln_pkgs = len(vulns)
 
-            self.app.call_from_thread(self.update_dashboard_ui)
-            self.app.call_from_thread(self.render_tree, root_node)
+            self.update_dashboard_ui()
+            self.render_tree(root_node)
 
         except Exception as e:
             logging.exception("Fatal error in worker:")
-            self.app.call_from_thread(self.show_error, str(e))
+            self.show_error(str(e))
 
     def render_tree(self, root_node: Any) -> None:
         tree = self.query_one("#dep-tree")
@@ -321,7 +322,7 @@ class CerneApp(App):
                 safe_name = escape(child.name)
                 safe_ver = escape(child.version)
 
-                # show the icon if dependency has child
+                # Logic for Child Count Indicator
                 child_count = len(child.children)
                 if child_count > 0:
                     count_suffix = f" [dim]↳[/] {child_count}"

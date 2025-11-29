@@ -21,8 +21,8 @@ classifiers = [
 requires-python = ">=3.10"
 
 dependencies = [
-    "textual>=0.40.0",
-    "requests>=2.32.5",
+    "textual>=6.7.0",
+    "httpx>=0.28.1",
     "tomli>=2.0.1; python_version < '3.11'"
 ]
 
