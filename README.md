@@ -8,7 +8,7 @@
 ## Features
 
 * **Multi-Language Support:** Auto-detects Go, Python, Ruby, and Node.js projects.
-* **⚡ High Performance:** Fully **Async I/O** scanning engine (using `httpx` + `asyncio`) capable of processing thousands of dependencies in seconds.
+* **High Performance:** Fully **Async I/O** scanning engine (using `httpx` + `asyncio`) capable of processing thousands of dependencies in seconds.
 * **Vulnerability Scanning:** Checks dependencies against the OSV database in real-time.
 * **Interactive TUI:** Built with [Textual](https://textual.textualize.io/), featuring mouse support and detailed modals.
 * **Vim-like Navigation:** Navigate the tree efficiently using `h`, `j`, `k`, `l`.
@@ -91,6 +91,6 @@ Visualize your project structure. Use Vim keys (`h`, `j`, `k`, `l`) or the mouse
 Spot threats immediately (marked in red) and press **Enter** to inspect the CVE details, summaries, and references in a modal window.
 
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/68d4d5dd-944f-4c62-b45c-9c19dde56eb7" alt="Vulnerability Details Modal" width="85%"/>
+  <img src="https://github.com/user-attachments/assets/54699a3e-ab91-41fc-8767-5e243250cc5d" alt="Vulnerability Details Modal" width="85%"/>
   <p><em>Detailed security information provided by the OSV.dev database.</em></p>
 </div>
