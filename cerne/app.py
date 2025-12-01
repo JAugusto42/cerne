@@ -13,7 +13,6 @@ from cerne.__version__ import __version__
 from cerne.core.scanner import check_vulnerabilities, enrich_tree
 from cerne.managers import detect_manager
 
-# Log Configuration
 logging.basicConfig(
     filename="debug.log",
     level=logging.DEBUG,
@@ -155,8 +154,9 @@ class CerneApp(App):
 
     BINDINGS = [
         Binding("q", "quit", "Quit"),
-        Binding("j", "cursor_down", "Down", show=False),
-        Binding("k", "cursor_up", "Up", show=False),
+        Binding("escape", "quit", "Quit", show=True),
+        Binding("j", "cursor_down", "Down", show=True),
+        Binding("k", "cursor_up", "Up", show=True),
         Binding("l", "expand_node", "Expand"),
         Binding("h", "collapse_node", "Collapse"),
         Binding("space", "toggle_node", "Toggle"),
@@ -191,8 +191,6 @@ class CerneApp(App):
     def on_mount(self) -> None:
         self.query_one("#tree-container").display = False
         self.scan_project()
-
-    # --- ACTIONS ---
 
     def action_cursor_down(self) -> None:
         self.query_one("#dep-tree").action_cursor_down()
@@ -237,8 +235,6 @@ class CerneApp(App):
         if root_data:
             self.render_tree(root_data)
 
-    # --- LOGIC ---
-
     def _has_vulnerable_descendant(self, node: Any) -> bool:
         if node.vulnerable:
             return True
@@ -248,7 +244,6 @@ class CerneApp(App):
         return False
 
     def update_progress(self, current: int, total: int) -> None:
-        # CORREÇÃO: Chamada direta, pois estamos no loop principal (async)
         self.update_status(f"Scanning security... (Batch {current} of {total})")
 
     def update_status(self, msg: str) -> None:
@@ -268,7 +263,6 @@ class CerneApp(App):
         self.query_one("#status-label").update(f"[bold red]Fatal Error:[/]\n{message}")
         self.query_one("LoadingIndicator").display = False
 
-    # CORREÇÃO: Worker Async rodando na thread principal
     @work(thread=False)
     async def scan_project(self) -> None:
         try:
