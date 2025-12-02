@@ -3,12 +3,14 @@ from .go import GoManager
 from .python import PythonManager
 from .javascript import NodeManager
 from .ruby import RubyManager
+from .rust import RustManager
 
 MANAGERS = [
     GoManager(),
     PythonManager(),
     NodeManager(),
     RubyManager(),
+    RustManager(),
 ]
 
 

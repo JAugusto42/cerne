@@ -47,7 +47,6 @@ class RubyManager(PackageManager):
                 current_parent = None
 
             if in_gem_block:
-                # Try to find a root dependency
                 match_spec = re_spec.match(line)
                 if match_spec:
                     name = match_spec.group(1)
@@ -58,7 +57,6 @@ class RubyManager(PackageManager):
                         adjacency[name] = []
                     continue
 
-                # try to find a sub dependency
                 match_dep = re_dep.match(line)
                 if match_dep and current_parent:
                     dep_name = match_dep.group(1)
@@ -84,11 +82,9 @@ class RubyManager(PackageManager):
 
             ver = versions.get(name, "")
 
-            # Protection against loops (common in rails: railties <-> rails)
             if name in ancestor_set:
                 return DependencyNode(name, ver + " ⟳", expanded=False)
 
-            # Visual depth limit
             node = DependencyNode(name, ver, expanded=False)
 
             new_ancestors = ancestor_set.copy()
@@ -96,7 +92,6 @@ class RubyManager(PackageManager):
 
             children = adjacency.get(name, [])
             for child_name in children:
-                # Ruby has optional dependencies that are sometimes not included in the specifications.
                 if child_name in versions:
                     node.children.append(build_tree(child_name, depth + 1, new_ancestors))
 

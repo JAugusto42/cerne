@@ -65,19 +65,13 @@ class GoManager(PackageManager):
 
             ver = versions.get(name, "")
 
-            # Protection 1: Rigid depth limit
             if depth > 10:
                 return DependencyNode(name, ver + "...", expanded=False)
-
-            # Protection 2: Cycle Detection
-            # If 'name' is already in the ancestors, we have a cycle. We stop here.
             if name in ancestor_set:
                 return DependencyNode(name, ver + " (ciclo ⟳)", expanded=False)
 
-            # Creates the current node.
             node = DependencyNode(name, ver, expanded=(depth == 0))
 
-            # Add current data to ancestors for children.
             new_ancestors = ancestor_set.copy()
             new_ancestors.add(name)
 
@@ -88,7 +82,6 @@ class GoManager(PackageManager):
 
             return node
 
-        # Building tree
         root_node = build_tree(root_name)
         logging.debug("Tree successfully constructed.")
 

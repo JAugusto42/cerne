@@ -20,6 +20,7 @@ async def check_vulnerabilities(packages_dict, ecosystem="Go", on_progress=None)
     if ecosystem == "RubyGems": osv_ecosystem = "RubyGems"
     if ecosystem in ["NPM", "NPM/Yarn"]: osv_ecosystem = "npm"
     if ecosystem == "PyPI (Pip)": osv_ecosystem = "PyPI"
+    if ecosystem == "Cargo (Rust)": osv_ecosystem = "crates.io"
 
     all_queries = []
     all_pkg_names = []
