@@ -236,6 +236,7 @@ class CerneApp(App):
             self.render_tree(root_data)
 
     def _has_vulnerable_descendant(self, node: Any) -> bool:
+        """Recursively checks if any children are vulnerable."""
         if node.vulnerable:
             return True
         for child in node.children:
@@ -309,28 +310,42 @@ class CerneApp(App):
 
         def add_nodes(tree_node, data_node):
             for child in data_node.children:
+                # Skip if filtering is on and this branch has no issues
                 if self.show_only_vulnerable and not self._has_vulnerable_descendant(child):
                     continue
 
                 safe_name = escape(child.name)
                 safe_ver = escape(child.version)
 
-                # Logic for Child Count Indicator
-                child_count = len(child.children)
-                if child_count > 0:
-                    count_suffix = f" [dim]↳[/] {child_count}"
-                else:
-                    count_suffix = ""
+                # Check states
+                is_vulnerable = child.vulnerable
+                has_indirect_risk = self._has_vulnerable_descendant(child)
 
-                if child.vulnerable:
+                child_count = len(child.children)
+                count_suffix = f" [dim]↳[/] {child_count}" if child_count > 0 else ""
+
+                if is_vulnerable:
+                    # STATE 1: DIRECT VULNERABILITY (RED)
+                    # Shows red icon and summary
                     safe_info = escape(child.vuln_summary)
                     label = f"[bold red](!) {safe_name}[/] [dim]{safe_ver}[/] [red]({safe_info})[/]{count_suffix}"
+                
+                elif has_indirect_risk:
+                    # STATE 2: INDIRECT RISK (YELLOW)
+                    # The package is safe, but contains vulnerable children
+                    label = f"[bold yellow](!) {safe_name}[/] [dim]{safe_ver}[/] [yellow dim](indirect risk)[/]{count_suffix}"
+                
                 elif not child.version:
+                    # STATE 3: INTERNAL/LOCAL (BLUE)
                     label = f"[blue](-) {safe_name}[/]{count_suffix}"
+                
                 else:
+                    # STATE 4: SAFE (GREEN)
                     label = f"[green](•) {safe_name} [dim]{safe_ver}[/]{count_suffix}"
 
                 new_node = tree_node.add(label, expand=child.expanded, data=child)
+                
+                # If filtering is active, auto-expand to show the path to the vuln
                 if self.show_only_vulnerable:
                     new_node.expand()
 

@@ -97,7 +97,6 @@ class NodeManager(PackageManager):
                 continue
 
             if in_deps_block and line.startswith("    "):
-                # "nome" "range"
                 parts = line.strip().split(maxsplit=1)
                 if len(parts) == 2:
                     d_name = parts[0].replace('"', '')

@@ -2,7 +2,6 @@ import httpx
 import asyncio
 import math
 import logging
-import os
 
 CONCURRENCY_LIMIT = asyncio.Semaphore(50)
 
@@ -102,7 +101,7 @@ async def process_batch(client, url, queries, names):
                 hydrated_data = await asyncio.gather(*hydration_tasks)
                 for i, data in enumerate(hydrated_data):
                     if data:
-                        pkg_name, original_v, index = pending_hydrations[i]
+                        pkg_name, _, index = pending_hydrations[i]
                         local_map[pkg_name][index] = data
 
         else:
@@ -123,7 +122,6 @@ async def _hydrate_vulnerability(client, vuln_id):
     except Exception as e:
         logging.warning(f"Failed to hydrate {vuln_id}: {e}")
     return None
-
 
 def enrich_tree(node, vuln_map):
     if node.name in vuln_map:
